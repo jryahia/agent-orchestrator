@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  agent-orchestrator:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - LLM_API_KEY=${LLM_API_KEY:-}
+      - LLM_BASE_URL=${LLM_BASE_URL:-https://api.openai.com/v1}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o-mini}
+      - SQLITE_PATH=/app/data/tasks.db
+    restart: unless-stopped

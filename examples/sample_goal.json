@@ -1,0 +1,14 @@
+{
+    "goals": [
+        {
+            "goal": "Research the top 5 open-source LLMs in 2025 and write a comparison report",
+            "agents": ["researcher", "writer", "reviewer"],
+            "output_format": "markdown"
+        },
+        {
+            "goal": "Find the latest Python web framework trends and summarize",
+            "agents": ["researcher", "writer"],
+            "output_format": "markdown"
+        }
+    ]
+}
