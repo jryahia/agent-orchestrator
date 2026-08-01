@@ -20,7 +20,7 @@ class Reviewer(BaseAgent):
         description = subtask.description
 
         review = self.llm.chat_json(
-            messages=[{"role": "user", "content": f"Review the following content based on the original task:\n\nTask: {description}\n\nContent:\n{content_to_review[:10000]}\n\nEvaluate on: accuracy, completeness, clarity, structure, and factual correctness. Provide a score (1-10) and specific improvement suggestions."}],
+            messages=[{"role": "user", "content": f"Review the following content based on the original task. Return a JSON object with 'score' (1-10), 'feedback' (string), and 'suggestions' (array of strings).\n\nTask: {description}\n\nContent:\n{content_to_review[:10000]}\n\nEvaluate on: accuracy, completeness, clarity, structure, and factual correctness."}],
             system_prompt="You are a quality assurance reviewer. Evaluate content critically and provide actionable feedback. Be constructive and specific.",
         )
 

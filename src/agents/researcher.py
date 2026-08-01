@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 import httpx
+from urllib.parse import quote
 from bs4 import BeautifulSoup
 
 from src.agents.base import BaseAgent
@@ -25,9 +26,13 @@ class Researcher(BaseAgent):
         if context and "previous_results" in context:
             context_info = f"\nPrevious context:\n{context['previous_results']}"
 
+        # Dry-run: skip real web searches
+        if self.llm._dry_run:
+            return f"[DRY RUN] Research would search: {query}"
+
         # Use LLM to decide search strategy and interpret results
         search_plan = self.llm.chat_json(
-            messages=[{"role": "user", "content": f"Research query: {query}\n{context_info}\nCreate a search plan with 2-3 search queries to answer this comprehensively. Return JSON with 'queries' array."}],
+            messages=[{"role": "user", "content": f"Research query: {query}\n{context_info}\nCreate a search plan with 2-3 search queries to answer this comprehensively. Return a single JSON object with a 'queries' array of strings."}],
             system_prompt="You are a research strategist. Plan web searches to gather comprehensive information.",
         )
 
@@ -54,7 +59,7 @@ class Researcher(BaseAgent):
     def _search_and_extract(self, query: str) -> str:
         """Search via a simple approach and extract page content."""
         # Use a search API or scrape approach
-        search_url = f"https://html.duckduckgo.com/html/?q={httpx.utils.quote(query)}"
+        search_url = f"https://html.duckduckgo.com/html/?q={quote(query)}"
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }

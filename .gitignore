@@ -19,3 +19,5 @@ build/
 *.swp
 *.swo
 *~
+.orchestrator_config.json
+.orchestrator_custom_agents.json

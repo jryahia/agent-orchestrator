@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional
 
 from src.agents import Deliverer, Researcher, Reviewer, Writer
 from src.agents.base import BaseAgent
+from src.agents.custom_agent import CustomAgent
+from src.custom_agent_store import CustomAgentStore
 from src.llm import LLMClient
 from src.memory.models import Subtask, SubtaskStatus
 from src.memory.task_store import TaskStore
@@ -24,12 +27,29 @@ class Dispatcher:
         llm_client: Optional[LLMClient] = None,
         tracker: Optional[Tracker] = None,
         parallel: bool = False,
+        custom_agents_dir: Optional[str] = None,
     ):
         self.store = task_store or TaskStore()
         self.llm = llm_client or LLMClient()
         self.tracker = tracker or Tracker(self.store)
         self.parallel = parallel
         self._agents: Dict[str, BaseAgent] = {}
+        # Custom agent store — load persisted definitions
+        self._custom_agent_store = CustomAgentStore(data_dir=custom_agents_dir)
+        self._loaded_custom_agents: Dict[str, Dict[str, str]] = (
+            self._custom_agent_store.to_dict()
+        )
+
+    def register_custom_agent(self, name: str, system_prompt: str) -> None:
+        """Register a new custom agent at runtime and persist it.
+
+        Once registered, the agent is immediately available via _get_agent().
+        """
+        self._custom_agent_store.add(name, system_prompt)
+        # Refresh the loaded agents dict
+        self._loaded_custom_agents = self._custom_agent_store.to_dict()
+        # Clear any cached agent with this name so it gets re-created
+        self._agents.pop(name, None)
 
     def _get_agent(self, agent_type: str) -> BaseAgent:
         """Get or create an agent by type."""
@@ -42,6 +62,14 @@ class Dispatcher:
                 self._agents[agent_type] = Reviewer(self.llm)
             elif agent_type == "deliverer":
                 self._agents[agent_type] = Deliverer(self.llm)
+            elif agent_type in self._loaded_custom_agents:
+                # Create a CustomAgent on-the-fly from the stored definition
+                info = self._loaded_custom_agents[agent_type]
+                self._agents[agent_type] = CustomAgent(
+                    name=agent_type,
+                    system_prompt=info["system_prompt"],
+                    llm_client=self.llm,
+                )
             else:
                 raise ValueError(f"Unknown agent type: {agent_type}")
         return self._agents[agent_type]
@@ -156,7 +184,7 @@ class Dispatcher:
                 "writer": "✍️",
                 "reviewer": "✅",
                 "deliverer": "📤",
-            }.get(subtask.agent_type, "•")
+            }.get(subtask.agent_type, "🤖")
 
             status_icon = "✅" if latest_status == SubtaskStatus.COMPLETED else "❌"
             parts.append(f"## {agent_emoji} {subtask.agent_type.title()} Agent {status_icon}")

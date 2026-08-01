@@ -19,6 +19,15 @@ import textwrap
 
 logger = logging.getLogger(__name__)
 
+
+def _setup_logging() -> None:
+    """Configure logging with a clean format for CLI output."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+        stream=sys.stderr,
+    )
+
 # Ensure the project root is on sys.path
 project_root = os.path.dirname(os.path.abspath(__file__))
 if project_root not in sys.path:
@@ -176,10 +185,11 @@ def start_api_server(port: int):
 
 
 def main():
+    _setup_logging()
     args = parse_args()
 
-    # Resolve goal from positional or --goal
-    goal = args.goal or args.goal_positional
+    # Resolve goal from positional or --goal (both land in args.goal via mutually-exclusive group)
+    goal = args.goal
 
     if args.api:
         start_api_server(args.port)

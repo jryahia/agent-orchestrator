@@ -9,7 +9,12 @@ from openai import OpenAI
 
 
 class LLMClient:
-    """Unified client for LLM interactions via the openai library."""
+    """Unified client for LLM interactions via the openai library.
+
+    Passed parameters (api_key, base_url, model) take priority over
+    the corresponding environment variables (LLM_API_KEY, LLM_BASE_URL,
+    LLM_MODEL), which serve as fallbacks.
+    """
 
     def __init__(
         self,
