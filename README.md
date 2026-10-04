@@ -1,23 +1,41 @@
 # Agent Orchestrator
 
+**Multi-agent workflow system: a master orchestrator plans a goal into subtasks and delegates them to researcher, writer, reviewer and deliverer agents.**
+
+![Python](https://img.shields.io/badge/Python-161b22?style=for-the-badge&labelColor=161b22&color=161b22) ![FastAPI](https://img.shields.io/badge/FastAPI-161b22?style=for-the-badge&labelColor=161b22&color=161b22) ![OpenAI](https://img.shields.io/badge/OpenAI-161b22?style=for-the-badge&labelColor=161b22&color=161b22) ![SQLite](https://img.shields.io/badge/SQLite-161b22?style=for-the-badge&labelColor=161b22&color=161b22) ![Docker](https://img.shields.io/badge/Docker-161b22?style=for-the-badge&labelColor=161b22&color=161b22)
+
+```mermaid
+flowchart LR
+    S0["Goal (CLI / API)"]
+    S1["Orchestrator: plan subtasks"]
+    S2["Worker agents: research, write, review"]
+    S3["Retry + progress tracking"]
+    S4["Output: Markdown, JSON, Telegram"]
+    S0 --> S1 --> S2 --> S3 --> S4
+```
+
+## Problem it solves
+
+Single-prompt LLM calls break down on multi-step work such as research followed by writing and review. This system plans the goal, runs each step with a specialized agent, retries failures and tracks every subtask in SQLite.
+
 A **Multi-Agent Workflow System** with a master orchestrator agent that breaks down goals into subtasks, delegates to specialized worker agents, collects results, and delivers final output.
 
 ## Features
 
-- 🧠 **Master Orchestrator** — takes a goal, plans subtasks, assigns to workers, tracks progress, compiles final result
-- 🤖 **Worker Agents:**
+- **Master Orchestrator** — takes a goal, plans subtasks, assigns to workers, tracks progress, compiles final result
+- **Worker Agents:**
   - **Researcher** — web search + content extraction (httpx + BeautifulSoup)
   - **Writer** — summarizes and formats content into structured output
   - **Reviewer** — checks quality, suggests improvements
   - **Deliverer** — sends result via Telegram/file
-- 🔗 **LLM Integration** — each agent uses OpenAI/DeepSeek/OpenRouter via the openai library
-- 💾 **Task Memory** — SQLite stores all workflows, subtasks, and agent outputs
-- 📊 **Progress Tracking** — each subtask shows its status (pending → running → completed/failed)
-- 🔄 **Retry Logic** — failed subtasks retry up to 3 times
-- ⛓️ **Max Depth** — prevents infinite delegation (max 3 levels)
-- 🖥️ **CLI Interface** — run workflows from the command line
-- 🌐 **API Server** — FastAPI-based REST API with Swagger docs
-- 📝 **Output Formats** — markdown, JSON, text file, Telegram message
+- **LLM Integration** — each agent uses OpenAI/DeepSeek/OpenRouter via the openai library
+- **Task Memory** — SQLite stores all workflows, subtasks, and agent outputs
+- **Progress Tracking** — each subtask shows its status (pending → running → completed/failed)
+- **Retry Logic** — failed subtasks retry up to 3 times
+- **Max Depth** — prevents infinite delegation (max 3 levels)
+- **CLI Interface** — run workflows from the command line
+- **API Server** — FastAPI-based REST API with Swagger docs
+- **Output Formats** — markdown, JSON, text file, Telegram message
 
 ## Quick Start
 
