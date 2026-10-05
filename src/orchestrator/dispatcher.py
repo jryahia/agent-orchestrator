@@ -179,15 +179,8 @@ class Dispatcher:
             latest = self.store.get_subtask(subtask.id) or subtask
             latest_status = latest.status
 
-            agent_emoji = {
-                "researcher": "🔍",
-                "writer": "✍️",
-                "reviewer": "✅",
-                "deliverer": "📤",
-            }.get(subtask.agent_type, "🤖")
-
-            status_icon = "✅" if latest_status == SubtaskStatus.COMPLETED else "❌"
-            parts.append(f"## {agent_emoji} {subtask.agent_type.title()} Agent {status_icon}")
+            status_word = "done" if latest_status == SubtaskStatus.COMPLETED else "failed"
+            parts.append(f"## {subtask.agent_type.title()} Agent ({status_word})")
             parts.append(f"**Task:** {subtask.description}")
             parts.append(f"**Status:** {latest_status.value}")
             if latest.retry_count > 0:

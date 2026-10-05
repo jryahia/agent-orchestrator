@@ -103,11 +103,11 @@ def make_header(title: str, subtitle: str = "") -> Panel:
 
 # ── Agent labels ──────────────────────────────────────────────────────────────
 
-AGENT_EMOJI = {
-    "researcher": "🔍",
-    "writer": "✍️",
-    "reviewer": "✅",
-    "deliverer": "📤",
+AGENT_MARK = {
+    "researcher": "•",
+    "writer": "•",
+    "reviewer": "•",
+    "deliverer": "•",
 }
 AGENT_COLORS = {
     "researcher": "blue",
@@ -118,9 +118,9 @@ AGENT_COLORS = {
 
 
 def agent_tag(agent_type: str) -> Text:
-    emoji = AGENT_EMOJI.get(agent_type, "🤖")
+    mark = AGENT_MARK.get(agent_type, "•")
     color = AGENT_COLORS.get(agent_type, "bright_cyan")
-    return Text(f"{emoji} {agent_type.title()}", style=f"bold {color}")
+    return Text(f"{mark} {agent_type.title()}", style=f"bold {color}")
 
 
 # ── History ───────────────────────────────────────────────────────────────────
@@ -147,10 +147,10 @@ def view_history(store: TaskStore) -> None:
             "pending": "dim",
         }.get(wf.status.value, "white")
         status_label = {
-            "completed": "✅ Completed",
-            "failed": "❌ Failed",
-            "running": "🔄 Running",
-            "pending": "⏳ Pending",
+            "completed": "Completed",
+            "failed": "Failed",
+            "running": "Running",
+            "pending": "Pending",
         }.get(wf.status.value, wf.status.value)
 
         done = sum(1 for s in wf.subtasks if s.status == SubtaskStatus.COMPLETED)
@@ -184,7 +184,7 @@ def view_history(store: TaskStore) -> None:
 def _show_workflow_detail(wf: Workflow) -> None:
     """Show the full result of a past workflow."""
     console.clear()
-    console.print(make_header("📄 Workflow Result", wf.goal[:60]))
+    console.print(make_header("Workflow Result", wf.goal[:60]))
     console.print()
 
     table = Table(box=box.SIMPLE, border_style="dim")
@@ -192,7 +192,7 @@ def _show_workflow_detail(wf: Workflow) -> None:
     table.add_column("Status", width=12)
     table.add_column("Description", width=50)
     for st in wf.subtasks:
-        s = "✅" if st.status == SubtaskStatus.COMPLETED else "❌" if st.status == SubtaskStatus.FAILED else "⏳"
+        s = "✓" if st.status == SubtaskStatus.COMPLETED else "✗" if st.status == SubtaskStatus.FAILED else "·"
         table.add_row(str(agent_tag(st.agent_type)), f"{s} {st.status.value}", st.description[:47] + "…" if len(st.description) > 47 else st.description)
     console.print(table)
 
@@ -212,7 +212,7 @@ def _show_workflow_detail(wf: Workflow) -> None:
 def edit_settings(cfg: dict) -> dict:
     """Edit configuration interactively."""
     console.clear()
-    console.print(make_header("⚙️  Settings"))
+    console.print(make_header("Settings"))
 
     console.print("\n[bold]Agents to use:[/bold]")
     # Include custom agents alongside built-in ones
@@ -221,8 +221,8 @@ def edit_settings(cfg: dict) -> dict:
     all_agents = ["researcher", "writer", "reviewer", "deliverer"] + custom_agents
     current = cfg.get("agents", ["researcher", "writer", "reviewer"])
     for a in all_agents:
-        checked = "☑" if a in current else "☐"
-        console.print(f"  {checked} {AGENT_EMOJI.get(a, '🤖')} {a.title()}")
+        checked = "(x)" if a in current else "( )"
+        console.print(f"  {checked} {AGENT_MARK.get(a, '•')} {a.title()}")
 
     suggested_default = ", ".join(current)
     console.print("\n[dim]Available: researcher, writer, reviewer, deliverer" + (f", {', '.join(custom_agents)}" if custom_agents else "") + "[/dim]")
@@ -245,7 +245,7 @@ def edit_settings(cfg: dict) -> dict:
 
     # ── LLM Configuration ──────────────────────────────────────────────
     console.print()
-    console.print(Rule("[bold cyan]🔌 LLM Configuration[/bold cyan]", style="cyan"))
+    console.print(Rule("[bold cyan]LLM Configuration[/bold cyan]", style="cyan"))
 
     # Provider selection with auto-fill of base_url
     PROVIDERS = {
@@ -329,10 +329,10 @@ class ProgressTracker:
             self.running -= 1
             if status == SubtaskStatus.COMPLETED:
                 self.completed += 1
-                icon = "✅"
+                icon = "✓"
             else:
                 self.failed += 1
-                icon = "❌"
+                icon = "✗"
             self._events.append(f"{icon} {agent_tag(agent)} {status.value}: {desc[:50]}")
             self._render()
 
@@ -352,7 +352,7 @@ def run_workflow_interactive(goal: str, cfg: dict) -> None:
     from rich.markdown import Markdown
 
     console.clear()
-    console.print(make_header("🤖 Running Workflow", goal[:70]))
+    console.print(make_header("Running Workflow", goal[:70]))
     console.print()
 
     store = TaskStore(db_path=cfg.get("db_path"))
@@ -369,7 +369,7 @@ def run_workflow_interactive(goal: str, cfg: dict) -> None:
     )
 
     # Plan
-    with console.status("[bold cyan]🧠 Planning subtasks…[/bold cyan]", spinner="dots"):
+    with console.status("[bold cyan]Planning subtasks…[/bold cyan]", spinner="dots"):
         workflow = Workflow(
             goal=goal,
             agents=cfg.get("agents", ["researcher", "writer", "reviewer"]),
@@ -392,7 +392,7 @@ def run_workflow_interactive(goal: str, cfg: dict) -> None:
     plan_table.add_column("Task", width=70)
     for i, st in enumerate(subtasks, 1):
         plan_table.add_row(str(i), str(agent_tag(st.agent_type)), st.description)
-    console.print(Panel(plan_table, title="📋 Plan", border_style="cyan"))
+    console.print(Panel(plan_table, title="Plan", border_style="cyan"))
     console.print()
 
     # Progress bar
@@ -422,15 +422,15 @@ def run_workflow_interactive(goal: str, cfg: dict) -> None:
                 store.save_subtask(st)
                 status = store.get_subtask(st.id)
                 status_val = status.status if status else SubtaskStatus.COMPLETED
-                icon = "✅" if status_val == SubtaskStatus.COMPLETED else "❌"
+                icon = "✓" if status_val == SubtaskStatus.COMPLETED else "✗"
             except Exception as e:
                 result = f"Error: {e}"
-                icon = "❌"
+                icon = "✗"
 
             event_log.append(f"  {icon} {agent_label}: {desc_short}")
             progress.update(task_id, advance=1)
 
-        progress.update(task_id, description="[bold green]✅ Workflow Complete![/bold green]")
+        progress.update(task_id, description="[bold green]Workflow Complete![/bold green]")
 
     # Compile
     final_output = dispatcher._compile_results(subtasks, {st.id: st.output_data or "" for st in subtasks})
@@ -441,7 +441,7 @@ def run_workflow_interactive(goal: str, cfg: dict) -> None:
 
     # Result
     console.print(Rule(style="cyan"))
-    console.print("[bold cyan]📊 Result[/bold cyan]")
+    console.print("[bold cyan]Result[/bold cyan]")
     console.print()
 
     if cfg.get("output_format") == "json":
@@ -452,7 +452,7 @@ def run_workflow_interactive(goal: str, cfg: dict) -> None:
             console.print(final_output[:3000])
     else:
         md = Markdown(final_output[:3000])
-        console.print(Panel(md, border_style="dim", title="📝 Output", padding=(1, 2)))
+        console.print(Panel(md, border_style="dim", title="Output", padding=(1, 2)))
 
     if len(final_output) > 3000:
         console.print("\n[dim]… (output truncated in preview)[/dim]")
@@ -467,10 +467,10 @@ def run_workflow_interactive(goal: str, cfg: dict) -> None:
     console.print()
     console.print(Panel(
         f"[bold]Workflow ID:[/bold] {workflow.id}\n"
-        f"[bold]Status:[/bold] ✅ {total_steps}/{total_steps} subtasks completed\n"
+        f"[bold]Status:[/bold] {total_steps}/{total_steps} subtasks completed\n"
         f"[bold]Goal:[/bold] {goal}",
         border_style="green",
-        title="🏁 Done",
+        title="Done",
     ))
     Prompt.ask("\n[dim]Press Enter to continue[/dim]")
 
@@ -480,7 +480,7 @@ def run_workflow_interactive(goal: str, cfg: dict) -> None:
 def show_goal_prompt(cfg: dict) -> None:
     """Interactive goal input with suggestions."""
     console.clear()
-    console.print(make_header("🎯 New Workflow", "Type your goal or pick a template"))
+    console.print(make_header("New Workflow", "Type your goal or pick a template"))
 
     suggestions = [
         "Research the top 5 open-source LLMs in 2025 and write a comparison report",
@@ -526,17 +526,17 @@ def show_skills_menu(cfg: dict) -> None:
 
     while True:
         console.clear()
-        console.print(make_header("📚 Skills", "Manage reusable prompt skills"))
+        console.print(make_header("Skills", "Manage reusable prompt skills"))
         console.print()
 
         menu = Table(box=box.ROUNDED, border_style="cyan", show_header=False, padding=(0, 2))
         menu.add_column("Option", style="bold", width=4)
         menu.add_column("Action", width=50)
-        menu.add_row("1", "📋  List Skills  —  Show all saved prompt skills")
-        menu.add_row("2", "➕  Create Skill  —  Save a new reusable prompt")
-        menu.add_row("3", "🗑️   Delete Skill  —  Remove a saved skill")
-        menu.add_row("4", "🚀  Use Skill  —  Run a workflow with a saved skill")
-        menu.add_row("5", "🔙  Back to Main Menu")
+        menu.add_row("1", "List Skills  —  Show all saved prompt skills")
+        menu.add_row("2", "Create Skill  —  Save a new reusable prompt")
+        menu.add_row("3", "Delete Skill  —  Remove a saved skill")
+        menu.add_row("4", "Use Skill  —  Run a workflow with a saved skill")
+        menu.add_row("5", "Back to Main Menu")
         console.print(menu)
         console.print()
 
@@ -575,7 +575,7 @@ def _show_skills_table(store: SkillsStore) -> bool:
     for i, skill in enumerate(skills, 1):
         created = skill.created_at[:19] if skill.created_at else "—"
         preview = skill.prompt_text[:37] + "…" if len(skill.prompt_text) > 37 else skill.prompt_text
-        agent_label = AGENT_EMOJI.get(skill.agent_type, "•") + " " + skill.agent_type.title()
+        agent_label = AGENT_MARK.get(skill.agent_type, "•") + " " + skill.agent_type.title()
         table.add_row(str(i), skill.name, agent_label, created, preview)
 
     console.print()
@@ -587,7 +587,7 @@ def _show_skills_table(store: SkillsStore) -> bool:
 def _list_skills(store: SkillsStore) -> None:
     """List all saved skills."""
     console.clear()
-    console.print(make_header("📋 Saved Skills"))
+    console.print(make_header("Saved Skills"))
     _show_skills_table(store)
     Prompt.ask("[dim]Press Enter to go back[/dim]")
 
@@ -595,7 +595,7 @@ def _list_skills(store: SkillsStore) -> None:
 def _create_skill(store: SkillsStore) -> None:
     """Interactive skill creation."""
     console.clear()
-    console.print(make_header("➕ Create Skill"))
+    console.print(make_header("Create Skill"))
     console.print()
 
     # Skill name
@@ -613,10 +613,10 @@ def _create_skill(store: SkillsStore) -> None:
         return
 
     # Agent type selection
-    all_agent_types = list(AGENT_EMOJI.keys())
+    all_agent_types = list(AGENT_MARK.keys())
     console.print("\n[bold]Target agent type:[/bold]")
     for i, agent in enumerate(all_agent_types, 1):
-        console.print(f"  {i}. {AGENT_EMOJI.get(agent, '')} {agent.title()} — {AGENT_DESCRIPTIONS.get(agent, '')[:50]}")
+        console.print(f"  {i}. {AGENT_MARK.get(agent, '')} {agent.title()} — {AGENT_DESCRIPTIONS.get(agent, '')[:50]}")
     agent_choice = Prompt.ask(
         "[bold cyan]Select agent type[/bold cyan]",
         choices=[str(i) for i in range(1, len(all_agent_types) + 1)],
@@ -625,7 +625,7 @@ def _create_skill(store: SkillsStore) -> None:
     agent_type = all_agent_types[int(agent_choice) - 1]
 
     # Prompt text — multi-line
-    console.print(f"\n[bold]Prompt text for {AGENT_EMOJI.get(agent_type, '')} {agent_type.title()}:[/bold]")
+    console.print(f"\n[bold]Prompt text for {AGENT_MARK.get(agent_type, '')} {agent_type.title()}:[/bold]")
     console.print("[dim](Type your prompt, then enter '---' on a new line to finish)[/dim]")
     lines = []
     while True:
@@ -642,7 +642,7 @@ def _create_skill(store: SkillsStore) -> None:
 
     try:
         store.add_skill(name.strip(), agent_type, prompt_text)
-        console.print(f"\n[green]✅ Skill '{name.strip()}' created for {agent_type.title()}[/green]")
+        console.print(f"\n[green]Skill '{name.strip()}' created for {agent_type.title()}[/green]")
     except ValueError as e:
         console.print(f"\n[red]{e}[/red]")
 
@@ -652,7 +652,7 @@ def _create_skill(store: SkillsStore) -> None:
 def _delete_skill(store: SkillsStore) -> None:
     """Interactive skill deletion."""
     console.clear()
-    console.print(make_header("🗑️  Delete Skill"))
+    console.print(make_header("Delete Skill"))
 
     if not _show_skills_table(store):
         Prompt.ask("[dim]Press Enter to go back[/dim]")
@@ -663,7 +663,7 @@ def _delete_skill(store: SkillsStore) -> None:
         return
 
     if store.delete_skill(name.strip()):
-        console.print(f"\n[green]✅ Skill '{name.strip()}' deleted.[/green]")
+        console.print(f"\n[green]Skill '{name.strip()}' deleted.[/green]")
     else:
         console.print(f"\n[red]No skill named '{name.strip()}' found.[/red]")
 
@@ -673,7 +673,7 @@ def _delete_skill(store: SkillsStore) -> None:
 def _use_skill(store: SkillsStore, cfg: dict) -> None:
     """Pick a skill and run a workflow with it."""
     console.clear()
-    console.print(make_header("🚀 Use a Skill"))
+    console.print(make_header("Use a Skill"))
 
     if not _show_skills_table(store):
         Prompt.ask("[dim]Press Enter to go back[/dim]")
@@ -690,7 +690,7 @@ def _use_skill(store: SkillsStore, cfg: dict) -> None:
         return
 
     console.print(f"\n[green]Using skill:[/green] [bold]{skill.name}[/bold]")
-    console.print(f"  Agent: {AGENT_EMOJI.get(skill.agent_type, '')} {skill.agent_type.title()}")
+    console.print(f"  Agent: {AGENT_MARK.get(skill.agent_type, '')} {skill.agent_type.title()}")
     console.print(f"  Prompt: {skill.prompt_text[:100]}")
 
     if not Confirm.ask("\n[bold cyan]Run this skill now?[/bold cyan]", default=True):
@@ -705,7 +705,7 @@ def _run_skill_workflow(skill: Skill, cfg: dict) -> None:
     from rich.markdown import Markdown
 
     console.clear()
-    console.print(make_header("🤖 Running Skill Workflow", skill.name))
+    console.print(make_header("Running Skill Workflow", skill.name))
     console.print()
 
     store = TaskStore(db_path=cfg.get("db_path"))
@@ -722,7 +722,7 @@ def _run_skill_workflow(skill: Skill, cfg: dict) -> None:
     )
 
     # Plan from skill
-    with console.status("[bold cyan]🧠 Planning subtasks from skill…[/bold cyan]", spinner="dots"):
+    with console.status("[bold cyan]Planning subtasks from skill…[/bold cyan]", spinner="dots"):
         workflow = Workflow(
             goal=f"[SKILL: {skill.name}] {skill.prompt_text[:60]}",
             agents=cfg.get("agents", ["researcher", "writer", "reviewer"]),
@@ -747,7 +747,7 @@ def _run_skill_workflow(skill: Skill, cfg: dict) -> None:
     plan_table.add_column("Task", width=70)
     for i, st in enumerate(subtasks, 1):
         plan_table.add_row(str(i), str(agent_tag(st.agent_type)), st.description)
-    console.print(Panel(plan_table, title="📋 Skill Plan", border_style="cyan"))
+    console.print(Panel(plan_table, title="Skill Plan", border_style="cyan"))
     console.print()
 
     # Progress bar
@@ -776,15 +776,15 @@ def _run_skill_workflow(skill: Skill, cfg: dict) -> None:
                 store.save_subtask(st)
                 status = store.get_subtask(st.id)
                 status_val = status.status if status else SubtaskStatus.COMPLETED
-                icon = "✅" if status_val == SubtaskStatus.COMPLETED else "❌"
+                icon = "✓" if status_val == SubtaskStatus.COMPLETED else "✗"
             except Exception as e:
                 result = f"Error: {e}"
-                icon = "❌"
+                icon = "✗"
 
             event_log.append(f"  {icon} {agent_label}: {desc_short}")
             progress.update(task_id, advance=1)
 
-        progress.update(task_id, description="[bold green]✅ Workflow Complete![/bold green]")
+        progress.update(task_id, description="[bold green]Workflow Complete![/bold green]")
 
     # Compile results
     final_output = dispatcher._compile_results(subtasks, {st.id: st.output_data or "" for st in subtasks})
@@ -793,7 +793,7 @@ def _run_skill_workflow(skill: Skill, cfg: dict) -> None:
 
     console.print()
     console.print(Rule(style="cyan"))
-    console.print("[bold cyan]📊 Result[/bold cyan]")
+    console.print("[bold cyan]Result[/bold cyan]")
     console.print()
 
     if cfg.get("output_format") == "json":
@@ -804,7 +804,7 @@ def _run_skill_workflow(skill: Skill, cfg: dict) -> None:
             console.print(final_output[:3000])
     else:
         md = Markdown(final_output[:3000])
-        console.print(Panel(md, border_style="dim", title="📝 Output", padding=(1, 2)))
+        console.print(Panel(md, border_style="dim", title="Output", padding=(1, 2)))
 
     if len(final_output) > 3000:
         console.print("\n[dim]… (output truncated in preview)[/dim]")
@@ -819,10 +819,10 @@ def _run_skill_workflow(skill: Skill, cfg: dict) -> None:
     console.print()
     console.print(Panel(
         f"[bold]Workflow ID:[/bold] {workflow.id}\n"
-        f"[bold]Status:[/bold] ✅ {total_steps}/{total_steps} subtasks completed\n"
+        f"[bold]Status:[/bold] {total_steps}/{total_steps} subtasks completed\n"
         f"[bold]Skill:[/bold] {skill.name} ({skill.agent_type.title()})",
         border_style="green",
-        title="🏁 Done",
+        title="Done",
     ))
     Prompt.ask("\n[dim]Press Enter to continue[/dim]")
 
@@ -839,7 +839,7 @@ def show_create_agent(_cfg: dict) -> None:
     store = _get_custom_agent_store()
 
     console.clear()
-    console.print(make_header("🤖 Create Custom Agent"))
+    console.print(make_header("Create Custom Agent"))
     console.print()
 
     # Step a: Name
@@ -876,7 +876,7 @@ def show_create_agent(_cfg: dict) -> None:
     # Step c: Confirmation
     console.print()
     console.print(Rule(style="cyan"))
-    console.print(f"[bold]Agent:[/bold] 🤖 {clean_name}")
+    console.print(f"[bold]Agent:[/bold] {clean_name}")
     console.print(f"[bold]System prompt:[/bold]")
     console.print(Panel(system_prompt[:500], border_style="dim"))
     if len(system_prompt) > 500:
@@ -889,7 +889,7 @@ def show_create_agent(_cfg: dict) -> None:
 
     try:
         store.add(clean_name, system_prompt)
-        console.print(f"\n[green]✅ Custom agent '{clean_name}' created![/green]")
+        console.print(f"\n[green]Custom agent '{clean_name}' created![/green]")
         console.print("[dim]It is now available in Settings and Workflows.[/dim]")
     except ValueError as e:
         console.print(f"\n[red]{e}[/red]")
@@ -903,7 +903,7 @@ def show_manage_agents(_cfg: dict) -> None:
 
     while True:
         console.clear()
-        console.print(make_header("🧠 Custom Agents"))
+        console.print(make_header("Custom Agents"))
         console.print()
 
         agents = store.list()
@@ -918,15 +918,15 @@ def show_manage_agents(_cfg: dict) -> None:
         table.add_column("Created", width=24)
         for i, agent in enumerate(agents, 1):
             created = agent.created_at[:19] if agent.created_at else "—"
-            table.add_row(str(i), f"🤖 {agent.name}", created)
+            table.add_row(str(i), f"{agent.name}", created)
         console.print(table)
         console.print()
 
         menu = Table(box=box.SIMPLE, border_style="dim", show_header=False, padding=(0, 2))
         menu.add_column("Option", style="bold", width=4)
         menu.add_column("Action", width=40)
-        menu.add_row("1", "🗑️   Delete a custom agent")
-        menu.add_row("2", "🔙  Back to Main Menu")
+        menu.add_row("1", "Delete a custom agent")
+        menu.add_row("2", "Back to Main Menu")
         console.print(menu)
 
         choice = Prompt.ask(
@@ -952,7 +952,7 @@ def _delete_custom_agent(store: CustomAgentStore) -> None:
         return
 
     if store.delete(name.strip()):
-        console.print(f"\n[green]✅ Agent '{name.strip()}' deleted.[/green]")
+        console.print(f"\n[green]Agent '{name.strip()}' deleted.[/green]")
     else:
         console.print(f"\n[red]No custom agent named '{name.strip()}' found.[/red]")
 
@@ -966,24 +966,24 @@ def show_menu(cfg: dict) -> str:
     console.clear()
 
     # App header
-    console.print(make_header("🤖  Agent Orchestrator", "Multi-Agent Workflow System"))
+    console.print(make_header("Agent Orchestrator", "Multi-Agent Workflow System"))
     console.print()
 
     # Config summary card
-    agents_str = ", ".join(f"{AGENT_EMOJI.get(a, '')} {a.title()}" for a in cfg.get("agents", ["researcher", "writer", "reviewer"]))
+    agents_str = ", ".join(f"{AGENT_MARK.get(a, '')} {a.title()}" for a in cfg.get("agents", ["researcher", "writer", "reviewer"]))
     config_table = Table(box=box.SIMPLE, border_style="dim", padding=(0, 2))
     config_table.add_column("Setting", style="bold cyan", width=18)
     config_table.add_column("Value", width=50)
-    config_table.add_row("🤖 Agents", agents_str)
-    config_table.add_row("📄 Format", cfg.get("output_format", "markdown").title())
-    config_table.add_row("⚡ Parallel", "✅ Yes" if cfg.get("parallel") else "❌ No")
+    config_table.add_row("Agents", agents_str)
+    config_table.add_row("Format", cfg.get("output_format", "markdown").title())
+    config_table.add_row("Parallel", "Yes" if cfg.get("parallel") else "No")
 
     # LLM status
     cfg_model = cfg.get("model", "") or os.environ.get("LLM_MODEL", "deepseek-chat")
     cfg_key = cfg.get("api_key", "") or ""
     env_key = os.environ.get("LLM_API_KEY", "")
     has_key = bool(cfg_key) or bool(env_key)
-    key_display = "✅ Set" if has_key else "⚠️  Not set (use Settings or set LLM_API_KEY)"
+    key_display = "Set" if has_key else "Not set (use Settings or set LLM_API_KEY)"
 
     cfg_base = cfg.get("base_url", "") or ""
     provider_name = "Custom"
@@ -999,25 +999,25 @@ def show_menu(cfg: dict) -> str:
     if not provider_name:
         provider_name = "Custom"
 
-    config_table.add_row("🔌 Provider", provider_name)
-    config_table.add_row("🤖 Model", cfg_model or "deepseek-chat")
-    config_table.add_row("🔑 API Key", key_display)
+    config_table.add_row("Provider", provider_name)
+    config_table.add_row("Model", cfg_model or "deepseek-chat")
+    config_table.add_row("API Key", key_display)
     wa_configured = bool(os.environ.get("WHATSAPP_TOKEN") and os.environ.get("WHATSAPP_PHONE_NUMBER_ID"))
-    config_table.add_row("💬 WhatsApp", "✅ Configured" if wa_configured else "⚠️  Not set (WHATSAPP_TOKEN + WHATSAPP_PHONE_NUMBER_ID)")
-    console.print(Panel(config_table, title="⚙️  Current Settings", border_style="cyan"))
+    config_table.add_row("WhatsApp", "Configured" if wa_configured else "Not set (WHATSAPP_TOKEN + WHATSAPP_PHONE_NUMBER_ID)")
+    console.print(Panel(config_table, title="Current Settings", border_style="cyan"))
     console.print()
 
     # Menu options
     menu = Table(box=box.ROUNDED, border_style="cyan", show_header=False, padding=(0, 2))
     menu.add_column("Option", style="bold", width=4)
     menu.add_column("Action", width=50)
-    menu.add_row("1", "🎯  New Workflow  —  Enter a goal and run it")
-    menu.add_row("2", "📚  History  —  View past workflow results")
-    menu.add_row("3", "⚙️   Settings  —  Configure agents, format, parallel mode")
-    menu.add_row("4", "📚  Skills  —  Manage reusable prompt skills")
-    menu.add_row("5", "🤖  Create Agent  —  Define a new custom agent")
-    menu.add_row("6", "🧠  Custom Agents  —  List & manage custom agents")
-    menu.add_row("7", "❌  Exit")
+    menu.add_row("1", "New Workflow  —  Enter a goal and run it")
+    menu.add_row("2", "History  —  View past workflow results")
+    menu.add_row("3", "Settings  —  Configure agents, format, parallel mode")
+    menu.add_row("4", "Skills  —  Manage reusable prompt skills")
+    menu.add_row("5", "Create Agent  —  Define a new custom agent")
+    menu.add_row("6", "Custom Agents  —  List & manage custom agents")
+    menu.add_row("7", "Exit")
     console.print(menu)
     console.print()
 
@@ -1051,7 +1051,7 @@ def main():
             elif choice == "6":
                 show_manage_agents(cfg)
             elif choice == "7":
-                console.print("\n[cyan]👋 Goodbye![/cyan]\n")
+                console.print("\n[cyan]Goodbye![/cyan]\n")
                 break
         except KeyboardInterrupt:
             console.print("\n[dim]Interrupted. Exiting…[/dim]")

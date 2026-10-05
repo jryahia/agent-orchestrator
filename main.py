@@ -83,7 +83,7 @@ def run_single_workflow(
     """Execute a single workflow and return results."""
     if dry_run:
         os.environ["DRY_RUN"] = "1"
-        logger.warning("🔧 DRY RUN MODE — no real LLM calls or web searches will be made\n")
+        logger.warning("DRY RUN MODE — no real LLM calls or web searches will be made\n")
 
     store = TaskStore()
     llm = LLMClient()
@@ -94,15 +94,15 @@ def run_single_workflow(
     workflow = Workflow(goal=goal, agents=agents, output_format=output_format)
     store.save_workflow(workflow)
 
-    logger.info("📋 Workflow ID: %s", workflow.id)
-    logger.info("🎯 Goal: %s", goal)
-    logger.info("🤖 Agents: %s", ', '.join(agents))
-    logger.info("📊 Output format: %s", output_format)
-    logger.info("%s", '⚡ Parallel execution' if parallel else '➡️ Sequential execution')
+    logger.info("Workflow ID: %s", workflow.id)
+    logger.info("Goal: %s", goal)
+    logger.info("Agents: %s", ', '.join(agents))
+    logger.info("Output format: %s", output_format)
+    logger.info("%s", 'Parallel execution' if parallel else 'Sequential execution')
     logger.info("")
 
     # Plan
-    logger.info("📝 Planning subtasks...")
+    logger.info("Planning subtasks...")
     subtasks = planner.plan(
         goal=goal,
         agents=agents,
@@ -119,12 +119,12 @@ def run_single_workflow(
     logger.info("")
 
     # Execute
-    logger.info("🚀 Executing workflow...")
+    logger.info("Executing workflow...")
     result = dispatcher.execute_workflow(workflow.id, subtasks)
 
     logger.info("")
     logger.info("=" * 60)
-    logger.info("✅ WORKFLOW COMPLETE")
+    logger.info("WORKFLOW COMPLETE")
     logger.info("=" * 60)
     logger.info("")
 
@@ -142,13 +142,13 @@ def run_single_workflow(
         fname = output_file if output_file.endswith(ext) else output_file + ext
         with open(fname, "w", encoding="utf-8") as f:
             f.write(final_output)
-        logger.info("\n💾 Output saved to: %s", fname)
+        logger.info("\nOutput saved to: %s", fname)
 
     # Show progress summary
     progress = tracker.get_progress(workflow.id)
-    logger.info("\n📊 Progress: %s/%s subtasks completed", progress['completed'], progress['total_subtasks'])
+    logger.info("\nProgress: %s/%s subtasks completed", progress['completed'], progress['total_subtasks'])
     if progress["failed"] > 0:
-        logger.error("❌ Failed: %s subtask(s)", progress['failed'])
+        logger.error("Failed: %s subtask(s)", progress['failed'])
 
     return result
 
@@ -159,7 +159,7 @@ def run_file_workflow(file_path: str, agents: list, parallel: bool, dry_run: boo
         data = json.load(f)
 
     goals = data if isinstance(data, list) else data.get("goals", [data])
-    logger.info("📋 Loaded %d goal(s) from %s\n", len(goals), file_path)
+    logger.info("Loaded %d goal(s) from %s\n", len(goals), file_path)
 
     for i, entry in enumerate(goals):
         goal = entry if isinstance(entry, str) else entry.get("goal", str(entry))
@@ -175,9 +175,9 @@ def run_file_workflow(file_path: str, agents: list, parallel: bool, dry_run: boo
 
 def start_api_server(port: int):
     """Start the FastAPI API server."""
-    logger.info("🌐 Starting API server on port %d...", port)
-    logger.info("📖 API docs at http://localhost:%d/docs", port)
-    logger.info("💚 Health check at http://localhost:%d/health", port)
+    logger.info("Starting API server on port %d...", port)
+    logger.info("API docs at http://localhost:%d/docs", port)
+    logger.info("Health check at http://localhost:%d/health", port)
     logger.info("")
     from api import app
     import uvicorn
@@ -200,7 +200,7 @@ def main():
         return
 
     if not goal:
-        logger.error("❌ Error: No goal provided. Use a positional argument or --goal.")
+        logger.error("Error: No goal provided. Use a positional argument or --goal.")
         logger.info("   Example: python main.py \"Research AI trends\"")
         sys.exit(1)
 
